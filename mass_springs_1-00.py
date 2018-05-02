@@ -25,6 +25,7 @@ from copy import copy as cp
 import math as m
 from math import cos
 from math import sin
+from math import sqrt
 
 ## GLOBAL CONSTANTS
 
@@ -34,34 +35,83 @@ DEBUG = 0 # set to 1 if we're debugging
 ## METHODS
 
 def derivs(state,tau,params):
-	"""Returns a list of the first and second derivatives for both arms in the
-	double pendulum system, given the current state,timestep tau, and system 
-	params."""
-	# # The state of the pendulum
-	# t1,t2 = state[0]
-	# o1,o2 = state[1]
-	# a1,a2 = state[2]
+	"""Returns a list of the first and second derivatives of the generalized 
+	positions of each mass in the system.
 	
-	# # The masses and arm lengths
-	# m1,m2,l1,l2 = params
+	'state' is a list of the lists of the derivatives of generalized coordinates
+	for each object in the system, grouped by derivative order. There are lists
+	of these derivative list for each coordinate need to describe the system:
+	
+	state = [coordinate1,coordinate2,...,coordinateq], where
+		coordinate1 = [[f1^(0),f2^(0),...,fn^(0)],[f1^(1),f2^(1),...fn^(1)],
+				...,[f1^(m),f2^(m),...fn^(m)]]
+		coordinate2 = likewise, and so on for the other coordinates
+	"""
+	# The mass positions. state[i][j] is the jth deriv group for coord. i
+	x_list = state[0][0]
+	y_list = state[1][0]
+	vx_list = state[0][1]
+	vy_list = state[1][1]
+	
+	# # The spring constant,mass, and network dimensions
+	kx,ky,m,r0,xlen,ylen = params
 
-	# dt = tau
+	o2_x = kx/m
+	o2_y = ky/m
 	
-	# # Moments of inertia for each arm
-	# I1 = (1./3)*m1*l1**2
-	# I2 = (1./3)*m2*l2**2
+	ax_list = xlen*ylen*[0]
+	for i in range(0,xlen):
+		for j in range(0,ylen):
+			n_ij = xlen*i + j # map the grid location to a 1D index
+			# ax[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
+			
+			# Add acceleration term if we're not on the...
+			if (i > 0): # ... top edge
+				n_hj = xlen*(i-1) + j
+				dx = x_list[n_hj]-x_list[n_ij]
+				dy = y_list[n_hj]-y_list[n_ij]
+				ax[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			if (i < xlen-1): # ... bottom edge
+				n_jj = xlen*(i+1) + j
+				dx = x_list[n_jj]-x_list[n_ij]
+				dy = y_list[n_jj]-y_list[n_ij]
+				ax[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			if (j > 0): # ... left edge
+				n_ii = xlen*i + (j-1)
+				dx = x_list[n_ii]-x_list[n_ij]
+				ax[n_ij] += -o2_x*(dx+r0)
+			if (j < ylen-1); # ... right edge
+				n_ik = xlen*i + (j+1))
+				dx = x_list[n_ik]-x_list[n_ij]
+				ax[n_ij] += o2_x*(dx-r0)
 	
-	# a1 = (((1./8)*m2*l1*l2*(o2*(o1*(sin(o1)*cos(o2)+cos(o2)*sin(o2))+
-	# o2*(cos(o1)*sin(o2)+sin(o1)*cos(o2)))+a2*(sin(o2)*sin(o1)-
-	# cos(o1)*cos(o2)))-m1*g*l1*sin(t1)/2.-(m2/4.)*a2*l2**2)/(m1*((l1/2.)**2)+
-	# I1+(1./4)*m2*l1**2))
+	ay_list = xlen*ylen*[0]
+	for i in range(0,xlen):
+		for j in range(0,ylen):
+			n_ij = xlen*i + j # map the grid location to a 1D index
+			# ay[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 		
-	# a2 = (((1./8)*m1*l2*l1*(o1*(o2*(sin(o2)*cos(o1)+cos(o1)*sin(o1))+
-	# o1*(cos(o2)*sin(o1)+sin(o2)*cos(o1)))+a1*(sin(o1)*sin(o2)-
-	# cos(o2)*cos(o1)))-m2*g*l2*sin(t2)/2.-(m1/4.)*a1*l1**2)/(m2*((l2/2.)**2)+
-	# I2+(1./4)*m2*l1**2))
+			# Add acceleration term if we're not on the...
+			if (j > 0): # ... left edge
+				n_ii = xlen*i + (j-1)
+				dx = x_list[n_ii]-x_list[n_ij]
+				dy = y_list[n_ii]-y_list[n_ij]
+				ay[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			if (j < ylen-1); # ... right edge 
+				n_ik = xlen*i + (j+1))
+				dx = x_list[n_ik]-x_list[n_ij]
+				dy = y_list[n_ik]-y_list[n_ij]
+				ay[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			if (i > 0): # ... top edge
+				n_hj = xlen*(i-1) + j
+				dy = y_list[n_hj]-y_list[n_ij]
+				ay[n_ij] += -o2_y*(dy+r0)
+			if (i < xlen-1): # ... bottom edge
+				n_jj = xlen*(i+1) + j
+				dy = y_list[n_ik]-y_list[n_ij]
+				ay[n_ij] += o2_y*(dy-r0)
 	
-	return [o1,o2],[a1,a2]
+	return [vx_list,ax_list],[vy_list,ay_list]
 		
 # def get_data(state,tau,steps,params,num_update):
 def get_data(states,tau,steps,params,num_update):

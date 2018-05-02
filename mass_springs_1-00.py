@@ -74,8 +74,8 @@ def get_data(states,tau,steps,params,num_update):
 	
 	# # The arrays of endpoints of arm1 and arm2 for each system. I.e., 
 	# # arm1_data = [[[x1_1,y1_1],[x1_2,y1_2],...,[x1_n,y1_n]],
-	# #			   [[x2_1,y2_1],[x2_2,y2_2],...,[x2_n,y2_n]],...,
-	# #			   [[xm_1,y2_1],[xm_2,y2_2],...,[xm_n,ym_n]]]
+	# #				 [[x2_1,y2_1],[x2_2,y2_2],...,[x2_n,y2_n]],...,
+	# #				 [[xm_1,y2_1],[xm_2,y2_2],...,[xm_n,ym_n]]]
 	# # where [xi_j,yi_j] is the endpoint coordinate of arm1 in the ith 
 	# # double pendulum system at step j. Likewise for arm2.
 	# arm1_data,arm2_data = [],[] 

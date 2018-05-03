@@ -10,7 +10,6 @@ method can be called for updating each generalized coordinate separately.
 
 To-do: use better nomenclature. 'state' should be replaced with 'coord' or 
 'state1D' throughout to specify that it is a state in only one parameter.
-
 """
 
 ## LIBRARIES
@@ -55,12 +54,22 @@ def rk4_update(state,h,params,derivatives):
 			of the ith object, evaluated at q+h.
 			u = the current coordinate we're dealing with; the uth coordinate.
 			"""
+		def copy_state(state):
+			temp = []
+			for substate in state:
+				temp.append(copy_nested_list(substate))
+			return temp
+		
 		k_mat = []
 		for i in range(0,len(state[u][:-1])): # iter over orders of derivs up to m-1, inclusive
 			k_list = []
 			for j in range(0,len(state[u][i])): # iter through the object indices
-				temp_s = copy_nested_list(state[u])
-				temp_s[i][j] = state[u][i][j]+dh_mat[i][j] # add dh to the ith f^(j)
+				# temp_s = [copy_nested_list(state[0]),copy_nested_list(state[1])]
+				temp_s = copy_state(state)
+				if DEBUG:
+					print("temp_s ",temp_s)
+					print("state ",state)
+				temp_s[u][i][j] = state[u][i][j]+dh_mat[i][j] # add dh to the ith f^(j)
 				k_list.append(h*derivatives(temp_s,h,params)[u][i][j])
 			k_mat.append(list(k_list)) # append a copy of l; this is the mth k list
 		return k_mat
@@ -89,6 +98,10 @@ def rk4_update(state,h,params,derivatives):
 	# Run the single-parameter solver of rk4.py for each parameter
 	new_state = []
 	for u in range(0,len(state)):
+		
+		if DEBUG:
+			print("u, state[u]",u,state[u])
+	
 		# Create the initial list of zeros to pass into k()
 		dh_mat_0 = []
 		for i in range(0,len(state[u][:-1])): # up to to m-1, inclusive
@@ -121,7 +134,7 @@ def rk4_update(state,h,params,derivatives):
 			new_state_u.append(list(new_derivs))
 			
 		# Get the mth derivatives with the analytical method passed in
-		new_state_u.append(derivatives(state,h,params)[-1])
+		new_state_u.append(derivatives(state[u],h,params)[u][-1])
 		new_state.append(new_state_u)
 		
 	return new_state

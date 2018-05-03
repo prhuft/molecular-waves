@@ -32,25 +32,32 @@ from math import sqrt
 
 g = 9.8 # [m/s]
 DEBUG = 1 # set to 1 if we're debugging
+iter = 0;
 
 ## METHODS
 
 def derivs(state,tau,params):
-	"""Returns a list of the first and second derivatives of the generalized 
-	positions of each mass in the system.
-	
-	'state' is a list of the lists of the derivatives of generalized coordinates
-	for each object in the system, grouped by derivative order. There are lists
-	of these derivative list for each coordinate need to describe the system:
-	
-	state = [coordinate1,coordinate2,...,coordinateq], where
-		coordinate1 = [[f1^(0),f2^(0),...,fn^(0)],[f1^(1),f2^(1),...fn^(1)],
-				...,[f1^(m),f2^(m),...fn^(m)]]
-		coordinate2 = likewise, and so on for the other coordinates
-	tau = the timestep. It does not get used here.
+	""" Returns a list of the first and second derivatives of the generalized 
+		positions of each mass in the system.
+		
+		'state' is a list of the lists of the derivatives of generalized coordinates
+		for each object in the system, grouped by derivative order. There are lists
+		of these derivative list for each coordinate need to describe the system:
+		
+		state = [coordinate1,coordinate2,...,coordinateq], where
+			coordinate1 = [[f1^(0),f2^(0),...,fn^(0)],[f1^(1),f2^(1),...fn^(1)],
+					...,[f1^(m),f2^(m),...fn^(m)]]
+			coordinate2 = likewise, and so on for the other coordinates
+		tau = the timestep. It does not get used here.
 	"""
+	
+	
+	iter = iter + 1
+	print("iter: ",iter)
+	
 	# The mass positions. state[i][j] is the jth deriv group for coord. i
-	x_list = state[0][0]
+	x_list = state[0][0] # <-- on second call, this is a scalar, 
+						 # and state is length 3. wth?
 	y_list = state[1][0]
 	vx_list = state[0][1]
 	vy_list = state[1][1]

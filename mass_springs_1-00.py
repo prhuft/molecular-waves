@@ -34,7 +34,7 @@ DEBUG = 0 # set to 1 if we're debugging
 
 ## METHODS
 
-def derivs(state,tau,params):
+def derivs(state,params):
 	"""Returns a list of the first and second derivatives of the generalized 
 	positions of each mass in the system.
 	
@@ -53,7 +53,7 @@ def derivs(state,tau,params):
 	vx_list = state[0][1]
 	vy_list = state[1][1]
 	
-	# # The spring constant,mass, and network dimensions
+	# The spring constant,mass, and network dimensions
 	kx,ky,m,r0,xlen,ylen = params
 
 	o2_x = kx/m
@@ -180,75 +180,67 @@ def get_data(states,tau,steps,params,num_update):
 			
 	return arm1_data,arm2_data
 	
-def get_initial_states(params,state_template,dstate,sys_size):
-	""" Returns a list of length 'sys_size', the elements of which are the 
-		initial states for each double pendulum system. That is, 
-		states = [[state1_0],[state2_0],...,[statem_0
-		where statei_0 is the initial state of the ith double pendulum, and 
-		m = sys_size. 
-		dstate = the initial difference between adjacent systems
-		state_template = the state of one system; each other state is built
-		by adding adding dstate scaled by an integer in (1,sys_size).
-		sys_size = the number of systems to generate."""
-	# l1,l2 = params[2:]
+def get_initial_state(params):
+	""" Returns a list describing the state, in the form:
+		state = [q1,q2,...,qz] where each q is a necessary parameter for 
+			describing the generalized position of a specific subsystem:
+			q = [[f1^(0),f2^(0),...,fn^(0)],[f1^(1),f2^(1),...fn^(1)],
+				  ...,[f1^(m),f2^(m),...fn^(m)]]
+		params = system-specific constants. E.g., mass, length, density, etc.
+		
+		Assume that the particles, initially stretched random distances out of 
+		equilibrium, are starting from rest. 
+	"""
 	
-	# state = hfl.copy_nested_list(state_template)
-	# states_0 = [state_template]
-	# for i in range(0,sys_size-1): # append n-1 one times for system of size n
-		# state = hfl.add_nested_lists(state,dstate) # add dstate each iteration
-		# # overwrite [a1,a2] which depend on the initial angle
-		# state[2] = [alpha_init(state[0][0],l1),alpha_init(state[0][1],l2)]
-		# states_0.append(state)
-	# if DEBUG: [print(x) for x in states_0]
-	return states_0
+	# The spring constant,mass, and network dimensions
+	kx,ky,m,r0,xlen,ylen = params
+	total =xlen*ylen # number of subsystems
 	
-def alpha_init(theta,length):
-	""" Returns the initial angular acceleration due only to gravitational 
-	torque exerted on the center of mass of a uniform arm of length 'length'
-	about one end, held at angle theta from the vertical."""
-	return -6*g*sin(theta)/length
+	rx_list,ry_list = total*[0],total*[0]
+	vx_list,vy_list = total*[0],total*[0] # replace later with derivs()
+	ax_list,ay_list = total*[0],total*[0] # replace later with derivs()
 	
-def toXY(theta,length):
-	""" Returns the (x,y) coordinate of the end of a single pendulum arm."""
-	return length*sin(theta), -length*cos(theta)
-
+	# Build the part of the state which is projected on x
+	state_x = []
+	for i in range(0,xlen): # iterate over the columns
+		for j in range(0,ylen): # iterate over the rows
+			rx_list[xlen*i + (j-1)] = i*xlen + r0*(rn()-.5) # the x coord of mass ij
+	state_x.append(rx_list)
+	state_x.append(vx_list)
+	state_x.append(ax_list)
+	
+	state_y = []
+	for i in range(0,xlen): # iterate over the columns
+		for j in range(0,ylen): # iterate over the rows
+			rx_list[xlen*i + (j-1)] = j*ylen + r0*(rn()-.5) # the y coord of mass ij
+	state_y.append(ry_list)
+	state_y.append(vy_list)
+	state_y.append(ay_list)
+		
+	state = [state_x,state_y]
+	# Replace ax_list and ay_list using derivs()
+	deriv_list = derivs(state,params)
+	state[0][2] = deriv_list[0][1]
+	state[1][2] = deriv_list[1][1]
+	
+	return states
+	
 ## SYSTEM INITIALIZATION
 
-# # Simulation parameters - assume each double pendulum identical
-# m1 = 1 #1 # [kg]
-# m2 = .5 # [kg]
-# l1 = 1 # [m]
-# l2 = 1 # [m]
-# params = [m1,m2,l1,l2]
+# Simulation parameters
+m = .1 # [kg] these are massive particles lol
+kx = 1 # [N/m] Spring constant in x
+ky = 1 # [N/m] Spring constant in y
+r0 = .1 # [m] the spring equilibrium length
+x_num =  10 # number of columns of masses
+y_num = 10 # number of rows of masses
+params = [kx,ky,m,r0,x_num,y_num]
 
-# # The state variables for one double pendulum
-# t1_0 = m.pi/2 # [rad] from vertical
-# t2_0 = m.pi/2 # ditto
-# o1_0 = 0 # [rad/s] 
-# o2_0 = 0 # ditto
-# a1_0 = alpha_init(t1_0,l1) # [rad/s^2]
-# a2_0 = alpha_init(t2_0,l2) # ditto
+# Generate the initial state
+state_0 = get_initial_state(params)
 
-# # The difference in initial variables between "adjacent" systems
-# dt1 = m.pi/360
-# dt2 = m.pi/360
-# do1 = 0
-# do2 = 0
-# da1 = 0 # a1_0 has to be calculated for each system in get_initial_states()
-# da2 = 0 # same. just leave as 0 for now
-
-# # Initial variables of one double_pendulum, grouped by derivative order. 
-# state1 = [[t1_0,t2_0],[o1_0,o2_0],[a1_0,a2_0]]
-
-# # The initial state difference between "adjacent" systems
-# delta_state = [[dt1,dt2],[do1,do2],[da1,da2]]
-
-# # Generate the initial state for each double pendulum system
-# states_0 = get_initial_states(params,state1,delta_state,total)
-
-# total = 10 # number of double pendulum systems
-# dt = 0.01 # [s]
-# iters = 10000 # times to update the systems
+dt = 0.01 # [s]
+iters = 10000 # times to update the systems
 
 # # Generate the data
 # data = get_data(states_0,dt,iters,params,rk4)

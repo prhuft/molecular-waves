@@ -147,6 +147,7 @@ def get_data(state,tau,steps,params,num_update):
 	ydata = [] # ditto, but in y
 	
 	# Forward feed the solver method for i = 0 to i = steps
+	
 	for i in range(0,steps): 
 		try:
 			# Update the state of the network
@@ -154,7 +155,8 @@ def get_data(state,tau,steps,params,num_update):
 			
 			xdata.append(new_state[0][0]) 
 			ydata.append(new_state[1][0])
-			
+			print("i:" i)
+		
 		except ValueError:		
 			print('value error at iteration ',i)
 			break

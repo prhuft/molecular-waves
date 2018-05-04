@@ -3,11 +3,10 @@ Runge-Kutta Numerical ODE Solving Method, v1.00
 
 Preston Huft, Spring 2018.
 
-Known bugs:
-- I think there may be an error in the multiplying of k values somewhere, or in
-adding the appropriate step values to the state variables in calculating k_mat.
-The double_pendulum_1-04 simulation gives a substantially different (and severely
-unrealistic, no less) result from double_pendulum_1-03 which uses rk4_two_bodies. 
+Notes: This solver is for systems whose motion is singly-parameterizeable, i.e. 
+one variable is sufficient for describing the system's generalized position. 
+To use this solver for systems which are not singly-parameterizeable, this
+method can be called for updating each generalized coordinate separately. 
 
 """
 

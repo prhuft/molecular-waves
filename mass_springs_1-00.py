@@ -31,7 +31,7 @@ from math import sqrt
 ## GLOBAL CONSTANTS
 
 g = 9.8 # [m/s]
-DEBUG = 1 # set to 1 if we're debugging
+DEBUG = 0 # set to 1 if we're debugging
 
 ## METHODS
 
@@ -94,6 +94,8 @@ def derivs(state,tau,params):
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
 				ax_list[n_ij] = o2_x*(dx-r0)
+			
+			print("ax_list: ",ax_list)
 	
 	ay_list = xlen*ylen*[0]
 	for i in range(0,xlen):
@@ -153,8 +155,7 @@ def get_data(state,tau,steps,params,num_update):
 			
 			xdata.append(new_state[0][0]) 
 			ydata.append(new_state[1][0])
-			print("i:" i)
-		
+
 		except ValueError:		
 			print('value error at iteration ',i)
 			break
@@ -175,6 +176,7 @@ def get_initial_state(params,tau):
 	
 	# The spring constant,mass, and network dimensions
 	kx,ky,m,r0,xlen,ylen = params
+	
 	total =xlen*ylen # number of subsystems
 	
 	rx_list,ry_list = total*[0],total*[0]
@@ -185,7 +187,7 @@ def get_initial_state(params,tau):
 	state_x = []
 	for i in range(0,xlen): # iterate over the columns
 		for j in range(0,ylen): # iterate over the rows
-			rx_list[xlen*i + (j-1)] = i*xlen + r0*(rn()-.5) # the x coord of mass ij
+			rx_list[xlen*i + j] = j*r0 + r0*(rn()-.5) # the x coord of mass ij
 	state_x.append(rx_list)
 	state_x.append(vx_list)
 	state_x.append(ax_list)
@@ -193,13 +195,12 @@ def get_initial_state(params,tau):
 	state_y = []
 	for i in range(0,xlen): # iterate over the columns
 		for j in range(0,ylen): # iterate over the rows
-			ry_list[xlen*i + (j-1)] = j*ylen + r0*(rn()-.5) # the y coord of mass ij
+			ry_list[xlen*i + j] = i*r0 + r0*(rn()-.5) # the y coord of mass ij
 	state_y.append(ry_list)
 	state_y.append(vy_list)
 	state_y.append(ay_list)
 		
 	state = [state_x,state_y]
-	# print("state: ", state)
 	# Replace ax_list and ay_list using derivs()
 	deriv_list = derivs(state,tau,params)
 	state[0][2] = deriv_list[0][1]
@@ -212,18 +213,22 @@ def get_initial_state(params,tau):
 
 # Simulation parameters
 m = .1 # [kg] these are massive particles lol
-kx = 1 # [N/m] Spring constant in x
-ky = 1 # [N/m] Spring constant in y
-r0 = .1 # [m] the spring equilibrium length
-x_num =  2 # number of columns of masses
-y_num = 2 # number of rows of masses
+kx = 10 # [N/m] Spring constant in x
+ky = 10 # [N/m] Spring constant in y
+r0 = 1 # [m] the spring equilibrium length
+x_num =  5 # number of columns of masses
+y_num = 5 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 dt = 0.01 # [s]
-iters = 10000 # times to update the systems
+iters = 10 #00 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
+
+# Pull the left-most particles r0 out of equilibrium
+# state_0[0][0] = [-r0*((i+1)%x_num!=0)+state_0[0][0][i]*((i+1)%x_num==0) 
+				 # for i in range(0,len(state_0[0][0]))] 
 
 # Generate the data
 xdata,ydata = get_data(state_0,dt,iters,params,rk4)
@@ -233,19 +238,20 @@ xdata,ydata = get_data(state_0,dt,iters,params,rk4)
 # Initialize the figure
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.set_facecolor('black')
 ax.set_aspect(aspect='equal')
+ax.set_facecolor('black')
 fig.patch.set_facecolor('black')
 
 # # Initialize the lines; actually, it will be more of a scatter plot
 scatter = []
-scatter, = ax.plot([],[],color='purple',marker='o')
+scatter, = ax.plot(xdata[0],ydata[0],color='purple',marker='o')
 
 def init():
 	""" Set the axes limits with global values. """
-	ax.set_ylim(-r0,xlen*(r0+1))
-	ax.set_xlim(-r0,ylen*(r0+1))
+	ax.set_ylim(min(ydata[0])-r0,max(ydata[0])+r0)
+	ax.set_xlim(min(xdata[0])-r0,max(xdata[0])+r0)
 	return scatter,
+
 	
 def update(i):
 	""" Set the ith data points with global values."""
@@ -255,7 +261,8 @@ def update(i):
 	return scatter,
 
 # Run the animation
-anim = animation.FuncAnimation(fig, update, frames=range(0,iters+1), 
+anim = animation.FuncAnimation(fig, update, frames=range(0,iters), 
 	init_func=init, blit=True, interval=1000*dt, repeat=False)
+# plt.style.context(('dark_background'))
 plt.show()
 

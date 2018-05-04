@@ -50,8 +50,6 @@ def derivs(state,tau,params):
 		tau = the timestep. It does not get used here.
 	"""
 	
-	print("iter: ",iter)
-	
 	# The mass positions. state[i][j] is the jth deriv group for coord. i
 	x_list = state[0][0] # <-- on second call, this is a scalar, 
 						 # and state is length 3. wth?
@@ -201,12 +199,12 @@ def get_initial_state(params,tau):
 	state_y.append(ay_list)
 		
 	state = [state_x,state_y]
-	print("state: ", state)
+	# print("state: ", state)
 	# Replace ax_list and ay_list using derivs()
 	deriv_list = derivs(state,tau,params)
 	state[0][2] = deriv_list[0][1]
 	state[1][2] = deriv_list[1][1]
-	print("state: ", state)
+	# print("state: ", state)
 	
 	return state
 	
@@ -227,7 +225,7 @@ iters = 10000 # times to update the systems
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
 
-# # Generate the data
+# Generate the data
 xdata,ydata = get_data(state_0,dt,iters,params,rk4)
 
 ## SIMULATION SETUP

@@ -94,6 +94,8 @@ def derivs(state,tau,params):
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
 				ax_list[n_ij] = o2_x*(dx-r0)
+			
+			print("ax_list: ",ax_list)
 	
 	ay_list = xlen*ylen*[0]
 	for i in range(0,xlen):
@@ -218,7 +220,7 @@ y_num = 5 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 dt = 0.01 # [s]
-iters = 1000 # times to update the systems
+iters = 10 #00 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)

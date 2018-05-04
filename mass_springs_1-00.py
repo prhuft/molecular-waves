@@ -42,10 +42,10 @@ def derivs(state,tau,params):
 	# o1,o2 = state[1]
 	# a1,a2 = state[2]
 	
-	# # The masses and arm lengths
-	# m1,m2,l1,l2 = params
+	# System parameters
+	kx,ky,m = params
 
-	# dt = tau
+	dt = tau
 	
 	# # Moments of inertia for each arm
 	# I1 = (1./3)*m1*l1**2
@@ -60,6 +60,8 @@ def derivs(state,tau,params):
 	# o1*(cos(o2)*sin(o1)+sin(o2)*cos(o1)))+a1*(sin(o1)*sin(o2)-
 	# cos(o2)*cos(o1)))-m2*g*l2*sin(t2)/2.-(m1/4.)*a1*l1**2)/(m2*((l2/2.)**2)+
 	# I2+(1./4)*m2*l1**2))
+	
+	xij = 
 	
 	return [o1,o2],[a1,a2]
 		

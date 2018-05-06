@@ -20,6 +20,7 @@ import helpfunclib as hfl
 from rk4_multicoord import rk4_update as rk4
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
+import msvcrt as ms
 from random import random as rn
 import numpy as np
 from copy import copy as cp
@@ -69,59 +70,57 @@ def derivs(state,tau,params):
 	o2_x = kx/m
 	o2_y = ky/m
 	
+	# Sum the acceleration in x
 	ax_list = xlen*ylen*[0]
 	for i in range(0,xlen):
 		for j in range(0,ylen):
 			n_ij = xlen*i + j # map the grid location to a 1D index
-			# ax[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
-			
+			ax_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
-			if (i > 0): # ... top edge
+			if (i > 0): # ... top edge; F_hj,ij
 				n_hj = xlen*(i-1) + j
 				dx = x_list[n_hj]-x_list[n_ij]
 				dy = y_list[n_hj]-y_list[n_ij]
-				ax_list[n_ij] = o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
-			if (i < xlen-1): # ... bottom edge
+				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			if (i < xlen-1): # ... bottom edge; F_jj,ij
 				n_jj = xlen*(i+1) + j
 				dx = x_list[n_jj]-x_list[n_ij]
 				dy = y_list[n_jj]-y_list[n_ij]
-				ax_list[n_ij] = o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
-			if (j > 0): # ... left edge
+				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			if (j > 0): # ... left edge; F_ii,ij
 				n_ii = xlen*i + (j-1)
 				dx = x_list[n_ii]-x_list[n_ij]
-				ax_list[n_ij] = -o2_x*(dx+r0)
-			if (j < ylen-1): # ... right edge
+				ax_list[n_ij] += -o2_x*(dx-r0)
+			if (j < ylen-1): # ... right edge; F_ik,ij
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
-				ax_list[n_ij] = o2_x*(dx-r0)
-			
-			print("ax_list: ",ax_list)
-	
+				ax_list[n_ij] += o2_x*(dx-r0)
+				
+	# Sum the acceleration in y
 	ay_list = xlen*ylen*[0]
 	for i in range(0,xlen):
 		for j in range(0,ylen):
 			n_ij = xlen*i + j # map the grid location to a 1D index
-			# ay[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
-		
+			ay_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
-			if (j > 0): # ... left edge
+			if (j > 0): # ... left edge; F_ii,ij
 				n_ii = xlen*i + (j-1)
 				dx = x_list[n_ii]-x_list[n_ij]
 				dy = y_list[n_ii]-y_list[n_ij]
-				ay_list[n_ij] = o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
-			if (j < ylen-1): # ... right edge 
+				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			if (j < ylen-1): # ... right edge; F_ik,ij 
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
 				dy = y_list[n_ik]-y_list[n_ij]
-				ay_list[n_ij] = o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
-			if (i > 0): # ... top edge
+				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			if (i > 0): # ... top edge; F_hj,ij
 				n_hj = xlen*(i-1) + j
 				dy = y_list[n_hj]-y_list[n_ij]
-				ay_list[n_ij] = -o2_y*(dy+r0)
-			if (i < xlen-1): # ... bottom edge
+				ay_list[n_ij] += o2_y*(dy-r0)
+			if (i < xlen-1): # ... bottom edge; F_jj,ij
 				n_jj = xlen*(i+1) + j
-				dy = y_list[n_ik]-y_list[n_ij]
-				ay_list[n_ij] = o2_y*(dy-r0)
+				dy = y_list[n_jj]-y_list[n_ij]
+				ay_list[n_ij] += -o2_y*(dy-r0)
 	
 	return [vx_list,ax_list],[vy_list,ay_list]
 		
@@ -151,10 +150,10 @@ def get_data(state,tau,steps,params,num_update):
 	for i in range(0,steps): 
 		try:
 			# Update the state of the network
-			new_state = num_update(state,dt,params,derivs)
+			state = num_update(state,dt,params,derivs)
 			
-			xdata.append(new_state[0][0]) 
-			ydata.append(new_state[1][0])
+			xdata.append(state[0][0]) 
+			ydata.append(state[1][0])
 
 		except ValueError:		
 			print('value error at iteration ',i)
@@ -187,7 +186,7 @@ def get_initial_state(params,tau):
 	state_x = []
 	for i in range(0,xlen): # iterate over the columns
 		for j in range(0,ylen): # iterate over the rows
-			rx_list[xlen*i + j] = j*r0 + r0*(rn()-.5) # the x coord of mass ij
+			rx_list[xlen*i + j] = j*r0 #+ r0*(rn()-.5)/10. # the x coord of mass ij
 	state_x.append(rx_list)
 	state_x.append(vx_list)
 	state_x.append(ax_list)
@@ -195,7 +194,7 @@ def get_initial_state(params,tau):
 	state_y = []
 	for i in range(0,xlen): # iterate over the columns
 		for j in range(0,ylen): # iterate over the rows
-			ry_list[xlen*i + j] = i*r0 + r0*(rn()-.5) # the y coord of mass ij
+			ry_list[xlen*i + j] = i*r0 #+ r0*(rn()-.5)/10. # the y coord of mass ij
 	state_y.append(ry_list)
 	state_y.append(vy_list)
 	state_y.append(ay_list)
@@ -212,16 +211,16 @@ def get_initial_state(params,tau):
 ## SYSTEM INITIALIZATION
 
 # Simulation parameters
-m = .1 # [kg] these are massive particles lol
-kx = 10 # [N/m] Spring constant in x
-ky = 10 # [N/m] Spring constant in y
+m = 1 # [kg] these are massive particles lol
+kx = .05 # [N/m] Spring constant in x
+ky = .05 # [N/m] Spring constant in y
 r0 = 1 # [m] the spring equilibrium length
 x_num =  5 # number of columns of masses
 y_num = 5 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 dt = 0.01 # [s]
-iters = 10 #00 # times to update the systems
+iters = 1000 #00 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
@@ -244,7 +243,7 @@ fig.patch.set_facecolor('black')
 
 # # Initialize the lines; actually, it will be more of a scatter plot
 scatter = []
-scatter, = ax.plot(xdata[0],ydata[0],color='purple',marker='o')
+scatter, = ax.plot(xdata[0],ydata[0],color='purple',marker='o',linestyle='None')
 
 def init():
 	""" Set the axes limits with global values. """
@@ -256,13 +255,20 @@ def init():
 def update(i):
 	""" Set the ith data points with global values."""
 	
+	# if ms.getch()!=None:
+		# while True:
+			# if ms.getch()!=None:
+				# break
+	
 	# The points describing the network at the ith step
 	scatter.set_data(xdata[i],ydata[i])
+	ax.set_ylim(min(ydata[i])-r0,max(ydata[i])+r0)
+	ax.set_xlim(min(xdata[i])-r0,max(xdata[i])+r0)
 	return scatter,
 
 # Run the animation
 anim = animation.FuncAnimation(fig, update, frames=range(0,iters), 
-	init_func=init, blit=True, interval=1000*dt, repeat=False)
+	init_func=init, blit=True, interval=1000*dt, repeat=True)
 # plt.style.context(('dark_background'))
 plt.show()
 

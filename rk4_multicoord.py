@@ -122,7 +122,5 @@ def rk4_update(state,h,params,derivatives):
 		# Get the mth derivatives with the analytical method passed in
 		new_state_u.append(derivatives(state,h,params)[u][-1])
 		new_state.append(new_state_u)
-	
-	print("state[0][1]: ",new_state[0][1])
-		
+			
 	return new_state

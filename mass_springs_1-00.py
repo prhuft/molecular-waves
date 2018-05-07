@@ -77,20 +77,20 @@ def derivs(state,tau,params):
 			n_ij = xlen*i + j # map the grid location to a 1D index
 			ax_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
-			# if (i > 0): # ... top edge; F_hj,ij
-				# n_hj = xlen*(i-1) + j
-				# dx = x_list[n_hj]-x_list[n_ij]
-				# dy = y_list[n_hj]-y_list[n_ij]
-				# ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
-			# if (i < xlen-1): # ... bottom edge; F_jj,ij
-				# n_jj = xlen*(i+1) + j
-				# dx = x_list[n_jj]-x_list[n_ij]
-				# dy = y_list[n_jj]-y_list[n_ij]
-				# ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			if (i > 0): # ... top edge; F_hj,ij
+				n_hj = xlen*(i-1) + j
+				dx = x_list[n_hj]-x_list[n_ij]
+				dy = y_list[n_hj]-y_list[n_ij]
+				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			if (i < xlen-1): # ... bottom edge; F_jj,ij
+				n_jj = xlen*(i+1) + j
+				dx = x_list[n_jj]-x_list[n_ij]
+				dy = y_list[n_jj]-y_list[n_ij]
+				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
 			if (j > 0): # ... left edge; F_ii,ij
 				n_ii = xlen*i + (j-1)
 				dx = x_list[n_ii]-x_list[n_ij]
-				ax_list[n_ij] += -o2_x*(dx-r0)
+				ax_list[n_ij] += o2_x*(dx+r0)
 			if (j < ylen-1): # ... right edge; F_ik,ij
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
@@ -103,24 +103,24 @@ def derivs(state,tau,params):
 			n_ij = xlen*i + j # map the grid location to a 1D index
 			ay_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
-			# if (j > 0): # ... left edge; F_ii,ij
-				# n_ii = xlen*i + (j-1)
-				# dx = x_list[n_ii]-x_list[n_ij]
-				# dy = y_list[n_ii]-y_list[n_ij]
-				# ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
-			# if (j < ylen-1): # ... right edge; F_ik,ij 
-				# n_ik = xlen*i + (j+1)
-				# dx = x_list[n_ik]-x_list[n_ij]
-				# dy = y_list[n_ik]-y_list[n_ij]
-				# ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
-			if (i > 0): # ... top edge; F_hj,ij
+			if (j > 0): # ... left edge; F_ii,ij
+				n_ii = xlen*i + (j-1)
+				dx = x_list[n_ii]-x_list[n_ij]
+				dy = y_list[n_ii]-y_list[n_ij]
+				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			if (j < ylen-1): # ... right edge; F_ik,ij 
+				n_ik = xlen*i + (j+1)
+				dx = x_list[n_ik]-x_list[n_ij]
+				dy = y_list[n_ik]-y_list[n_ij]
+				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			if (i > 0): # ... bottom edge; F_hj,ij
 				n_hj = xlen*(i-1) + j
 				dy = y_list[n_hj]-y_list[n_ij]
-				ay_list[n_ij] += o2_y*(dy-r0)
-			if (i < xlen-1): # ... bottom edge; F_jj,ij
+				ay_list[n_ij] += o2_y*(dy+r0)
+			if (i < xlen-1): # ... top edge; F_jj,ij
 				n_jj = xlen*(i+1) + j
 				dy = y_list[n_jj]-y_list[n_ij]
-				ay_list[n_ij] += -o2_y*(dy-r0)
+				ay_list[n_ij] += o2_y*(dy-r0)
 	
 	return [vx_list,ax_list],[vy_list,ay_list]
 		
@@ -189,22 +189,18 @@ def get_initial_state(params,tau):
 	ax_list,ay_list = total*[0],total*[0] # replace later with derivs()
 	
 	# Build the part of the state which is projected on x
-	state_x = []
+	state_x,state_y = [],[]
 	for i in range(0,xlen): # iterate over the columns
 		for j in range(0,ylen): # iterate over the rows
-			rx_list[xlen*i + j] = j*r0 #+ r0*(rn()-.5)/10. # the x coord of mass ij
+			rx_list[xlen*i + j] = j*r0 + r0*(rn()-.5)/2. # the x coord of mass ij
+			ry_list[xlen*i + j] = i*r0 + r0*(rn()-.5)/2. # the y coord of mass ij
 	state_x.append(rx_list)
 	state_x.append(vx_list)
 	state_x.append(ax_list)
-	
-	state_y = []
-	for i in range(0,xlen): # iterate over the columns
-		for j in range(0,ylen): # iterate over the rows
-			ry_list[xlen*i + j] = i*r0 #+ r0*(rn()-.5)/10. # the y coord of mass ij
 	state_y.append(ry_list)
 	state_y.append(vy_list)
 	state_y.append(ay_list)
-		
+	
 	state = [state_x,state_y]
 	# Replace ax_list and ay_list using derivs()
 	deriv_list = derivs(state,tau,params)
@@ -218,8 +214,8 @@ def get_initial_state(params,tau):
 
 # Simulation parameters
 m = 1 # [kg] these are massive particles lol
-kx = .05 # [N/m] Spring constant in x
-ky = .05 # [N/m] Spring constant in y
+kx = .5 # [N/m] Spring constant in x
+ky = .5 # [N/m] Spring constant in y
 r0 = 1 # [m] the spring equilibrium length
 x_num =  5 # number of columns of masses
 y_num = 5 # number of rows of masses
@@ -231,9 +227,12 @@ iters = 1000 #00 # times to update the systems
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
 
-# Pull the left-most particles r0 out of equilibrium
-# state_0[0][0] = [-r0*((i+1)%x_num!=0)+state_0[0][0][i]*((i+1)%x_num==0) 
+# # Pull the left-most particles r0 out of equilibrium
+# state_0[0][0] = [-r0*((i+1)%x_num==0)/10.+state_0[0][0][i]*((i+1)%x_num!=0) 
 				 # for i in range(0,len(state_0[0][0]))] 
+				 
+# Pull the top left particle out of equilibrium to the left
+# state_0[0][0][x_num*(y_num-1)] = -r0
 
 # Generate the data
 xdata,ydata = get_data(state_0,dt,iters,params,rk4)

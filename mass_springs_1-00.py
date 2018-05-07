@@ -1,14 +1,13 @@
-""""
-Mechanical Vibration Transfer Simulation, v1.05
+"""
+Mechanical Vibration Transfer Simulation, v1.00
 	
 Preston Huft, Spring 2018. 
 
-Numerical simulation of _name here_, solved iteratively with
-the Runge-Kutta (4th order) method. 
+Numerical simulation of masses connected by invisible, massless springs, solved 
+iteratively with the Runge-Kutta (4th order) method. 
 
-Version notes: This first version is in the spirit of (and frankly, the flesh
-of) double_pendulum_1-05.py. 
-
+Version notes: This first version plots plots a 2D grid of masses, animates the
+frames, and saves the animation as a gif with ImageMagick-7.
 
 - Generalize get_initial_states for any type of system; i.e. pass in a function
 	to handle system-specific things, such as getting the initial mth derivs. 
@@ -52,8 +51,7 @@ def derivs(state,tau,params):
 	"""
 	
 	# The mass positions. state[i][j] is the jth deriv group for coord. i
-	x_list = state[0][0] # <-- on second call, this is a scalar, 
-						 # and state is length 3. wth?
+	x_list = state[0][0] 
 	y_list = state[1][0]
 	vx_list = state[0][1]
 	vy_list = state[1][1]
@@ -71,9 +69,9 @@ def derivs(state,tau,params):
 	o2_y = ky/m
 	
 	# Sum the acceleration in x
-	ax_list = xlen*ylen*[0]
-	for i in range(0,xlen):
-		for j in range(0,ylen):
+	ax_list = (xlen*ylen)*[0]
+	for j in range(0,xlen):
+		for i in range(0,ylen):
 			n_ij = xlen*i + j # map the grid location to a 1D index
 			ax_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
@@ -82,7 +80,7 @@ def derivs(state,tau,params):
 				dx = x_list[n_hj]-x_list[n_ij]
 				dy = y_list[n_hj]-y_list[n_ij]
 				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
-			if (i < xlen-1): # ... bottom edge; F_jj,ij
+			if (i < ylen-1): # ... bottom edge; F_jj,ij
 				n_jj = xlen*(i+1) + j
 				dx = x_list[n_jj]-x_list[n_ij]
 				dy = y_list[n_jj]-y_list[n_ij]
@@ -91,15 +89,15 @@ def derivs(state,tau,params):
 				n_ii = xlen*i + (j-1)
 				dx = x_list[n_ii]-x_list[n_ij]
 				ax_list[n_ij] += o2_x*(dx+r0)
-			if (j < ylen-1): # ... right edge; F_ik,ij
+			if (j < xlen-1): # ... right edge; F_ik,ij
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
 				ax_list[n_ij] += o2_x*(dx-r0)
 				
 	# Sum the acceleration in y
 	ay_list = xlen*ylen*[0]
-	for i in range(0,xlen):
-		for j in range(0,ylen):
+	for j in range(0,xlen):
+		for i in range(0,ylen):
 			n_ij = xlen*i + j # map the grid location to a 1D index
 			ay_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
@@ -108,7 +106,7 @@ def derivs(state,tau,params):
 				dx = x_list[n_ii]-x_list[n_ij]
 				dy = y_list[n_ii]-y_list[n_ij]
 				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
-			if (j < ylen-1): # ... right edge; F_ik,ij 
+			if (j < xlen-1): # ... right edge; F_ik,ij 
 				n_ik = xlen*i + (j+1)
 				dx = x_list[n_ik]-x_list[n_ij]
 				dy = y_list[n_ik]-y_list[n_ij]
@@ -117,7 +115,7 @@ def derivs(state,tau,params):
 				n_hj = xlen*(i-1) + j
 				dy = y_list[n_hj]-y_list[n_ij]
 				ay_list[n_ij] += o2_y*(dy+r0)
-			if (i < xlen-1): # ... top edge; F_jj,ij
+			if (i < ylen-1): # ... top edge; F_jj,ij
 				n_jj = xlen*(i+1) + j
 				dy = y_list[n_jj]-y_list[n_ij]
 				ay_list[n_ij] += o2_y*(dy-r0)
@@ -147,14 +145,9 @@ def get_data(state,tau,steps,params,num_update):
 	xdata = [] # the x positions
 	ydata = [] # ditto, but in y
 	
-	# Forward feed the solver method for i = 0 to i = steps
-	
+	# Forward feed the solver method
 	for i in range(0,steps): 
 		try:
-			# if fix_outer:
-				# state_0[0][0] = [-r0*((i+1)%x_num!=0)+state_0[0][0][i]*((i+1)%x_num==0) 
-								 # for i in range(0,len(state_0[0][0]))] 
-								 
 			# Update the state of the network
 			state = num_update(state,dt,params,derivs)
 			
@@ -190,10 +183,10 @@ def get_initial_state(params,tau):
 	
 	# Build the part of the state which is projected on x
 	state_x,state_y = [],[]
-	for i in range(0,xlen): # iterate over the columns
-		for j in range(0,ylen): # iterate over the rows
-			rx_list[xlen*i + j] = j*r0 + r0*(rn()-.5)/2. # the x coord of mass ij
-			ry_list[xlen*i + j] = i*r0 + r0*(rn()-.5)/2. # the y coord of mass ij
+	for j in range(0,xlen): # iterate over the columns
+		for i in range(0,ylen): # iterate over the rows
+			rx_list[xlen*i + j] = j*r0 #+ r0*(rn()-.5)/2. # the x coord of mass ij
+			ry_list[xlen*i + j] = i*r0 #+ r0*(rn()-.5)/2. # the y coord of mass ij
 	state_x.append(rx_list)
 	state_x.append(vx_list)
 	state_x.append(ax_list)
@@ -213,11 +206,11 @@ def get_initial_state(params,tau):
 ## SYSTEM INITIALIZATION
 
 # Simulation parameters
-m = 1 # [kg] these are massive particles lol
-kx = .5 # [N/m] Spring constant in x
-ky = .5 # [N/m] Spring constant in y
+m = .1 # [kg] these are massive particles lol
+kx = 1 # [N/m] Spring constant in x
+ky = 1 # [N/m] Spring constant in y
 r0 = 1 # [m] the spring equilibrium length
-x_num =  5 # number of columns of masses
+x_num =  10 # number of columns of masses
 y_num = 5 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
@@ -227,12 +220,10 @@ iters = 1000 #00 # times to update the systems
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
 
-# # Pull the left-most particles r0 out of equilibrium
-# state_0[0][0] = [-r0*((i+1)%x_num==0)/10.+state_0[0][0][i]*((i+1)%x_num!=0) 
-				 # for i in range(0,len(state_0[0][0]))] 
-				 
-# Pull the top left particle out of equilibrium to the left
-# state_0[0][0][x_num*(y_num-1)] = -r0
+# Pull the leftmost particles r0 to the left out of equilibrium
+xlist = state_0[0][0]
+state_0[0][0] = [-r0*(i%x_num==0)+xlist[i]*(i%x_num!=0) 
+				 for i in range(0,len(xlist))] 
 
 # Generate the data
 xdata,ydata = get_data(state_0,dt,iters,params,rk4)
@@ -247,16 +238,14 @@ ax.set_facecolor('black')
 fig.patch.set_facecolor('black')
 
 # # Initialize the lines; actually, it will be more of a scatter plot
-scatter = []
-scatter, = ax.plot(xdata[0],ydata[0],color='purple',marker='o',linestyle='None')
-# scatter, = ax.scatter(xdata[0],ydata[0],color='purple',marker='o',linestyle='None')
+scatter = [] # this line is probably unnecessary
+scatter, = ax.plot(xdata[0],ydata[0],color='green',marker='o',linestyle='None')
 
 def init():
 	""" Set the axes limits with global values. """
 	ax.set_ylim(min(ydata[0])-r0,max(ydata[0])+r0)
 	ax.set_xlim(min(xdata[0])-r0,max(xdata[0])+r0)
 	return scatter,
-
 	
 def update(i):
 	""" Set the ith data points with global values."""
@@ -269,6 +258,8 @@ def update(i):
 # Run the animation
 anim = animation.FuncAnimation(fig, update, frames=range(0,iters), 
 	init_func=init, blit=True, interval=1000*dt, repeat=True)
-# plt.style.context(('dark_background'))
+
+plt.rcParams["animation.convert_path"] = "C:\Program Files\ImageMagick-7.0.7-Q16\magick.exe"
+anim.save('py_phonon.gif', writer="imagemagick",extra_args="convert")
 plt.show()
 

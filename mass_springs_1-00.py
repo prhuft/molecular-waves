@@ -77,16 +77,16 @@ def derivs(state,tau,params):
 			n_ij = xlen*i + j # map the grid location to a 1D index
 			ax_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
-			if (i > 0): # ... top edge; F_hj,ij
-				n_hj = xlen*(i-1) + j
-				dx = x_list[n_hj]-x_list[n_ij]
-				dy = y_list[n_hj]-y_list[n_ij]
-				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
-			if (i < xlen-1): # ... bottom edge; F_jj,ij
-				n_jj = xlen*(i+1) + j
-				dx = x_list[n_jj]-x_list[n_ij]
-				dy = y_list[n_jj]-y_list[n_ij]
-				ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			# if (i > 0): # ... top edge; F_hj,ij
+				# n_hj = xlen*(i-1) + j
+				# dx = x_list[n_hj]-x_list[n_ij]
+				# dy = y_list[n_hj]-y_list[n_ij]
+				# ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
+			# if (i < xlen-1): # ... bottom edge; F_jj,ij
+				# n_jj = xlen*(i+1) + j
+				# dx = x_list[n_jj]-x_list[n_ij]
+				# dy = y_list[n_jj]-y_list[n_ij]
+				# ax_list[n_ij] += o2_x*(1-r0/sqrt(dx**2+dy**2))*dx
 			if (j > 0): # ... left edge; F_ii,ij
 				n_ii = xlen*i + (j-1)
 				dx = x_list[n_ii]-x_list[n_ij]
@@ -103,16 +103,16 @@ def derivs(state,tau,params):
 			n_ij = xlen*i + j # map the grid location to a 1D index
 			ay_list[n_ij] = 0 # ax for the (ij)th mass (thinking in 2D)
 			# Add acceleration term if we're not on the...
-			if (j > 0): # ... left edge; F_ii,ij
-				n_ii = xlen*i + (j-1)
-				dx = x_list[n_ii]-x_list[n_ij]
-				dy = y_list[n_ii]-y_list[n_ij]
-				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
-			if (j < ylen-1): # ... right edge; F_ik,ij 
-				n_ik = xlen*i + (j+1)
-				dx = x_list[n_ik]-x_list[n_ij]
-				dy = y_list[n_ik]-y_list[n_ij]
-				ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			# if (j > 0): # ... left edge; F_ii,ij
+				# n_ii = xlen*i + (j-1)
+				# dx = x_list[n_ii]-x_list[n_ij]
+				# dy = y_list[n_ii]-y_list[n_ij]
+				# ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
+			# if (j < ylen-1): # ... right edge; F_ik,ij 
+				# n_ik = xlen*i + (j+1)
+				# dx = x_list[n_ik]-x_list[n_ij]
+				# dy = y_list[n_ik]-y_list[n_ij]
+				# ay_list[n_ij] += o2_y*(1-r0/sqrt(dx**2+dy**2))*dy
 			if (i > 0): # ... top edge; F_hj,ij
 				n_hj = xlen*(i-1) + j
 				dy = y_list[n_hj]-y_list[n_ij]
@@ -135,6 +135,8 @@ def get_data(state,tau,steps,params,num_update):
 				  ...,[f1^(m),f2^(m),...fn^(m)]]
 		params = system-specific constants. E.g., mass, length, density, etc.
 	"""
+	# Fix all outermost masses?
+	fix_outer = True
 	
 	# Extract system parameters
 	kx,ky,m,r0,xlen,ylen = params
@@ -149,6 +151,10 @@ def get_data(state,tau,steps,params,num_update):
 	
 	for i in range(0,steps): 
 		try:
+			# if fix_outer:
+				# state_0[0][0] = [-r0*((i+1)%x_num!=0)+state_0[0][0][i]*((i+1)%x_num==0) 
+								 # for i in range(0,len(state_0[0][0]))] 
+								 
 			# Update the state of the network
 			state = num_update(state,dt,params,derivs)
 			
@@ -244,6 +250,7 @@ fig.patch.set_facecolor('black')
 # # Initialize the lines; actually, it will be more of a scatter plot
 scatter = []
 scatter, = ax.plot(xdata[0],ydata[0],color='purple',marker='o',linestyle='None')
+# scatter, = ax.scatter(xdata[0],ydata[0],color='purple',marker='o',linestyle='None')
 
 def init():
 	""" Set the axes limits with global values. """
@@ -254,12 +261,6 @@ def init():
 	
 def update(i):
 	""" Set the ith data points with global values."""
-	
-	# if ms.getch()!=None:
-		# while True:
-			# if ms.getch()!=None:
-				# break
-	
 	# The points describing the network at the ith step
 	scatter.set_data(xdata[i],ydata[i])
 	ax.set_ylim(min(ydata[i])-r0,max(ydata[i])+r0)

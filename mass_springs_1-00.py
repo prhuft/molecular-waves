@@ -211,8 +211,8 @@ m = .1 # [kg] these are massive particles lol
 kx = 1 # [N/m] Spring constant in x
 ky = 1 # [N/m] Spring constant in y
 r0 = 1 # [m] the spring equilibrium length
-x_num =  8 # number of columns of masses
-y_num = 4 # number of rows of masses
+x_num =  10 # number of columns of masses
+y_num = 5 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 dt = 0.01 # [s]
@@ -232,13 +232,14 @@ xdata,ydata = get_data(state_0,dt,iters,params,rk4)
 ## SIMULATION SETUP
 
 # Initialize the figure
-fig = plt.figure()#frameon=False)
+fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.set_axis_off()
+ax.set_axis_off() # gif background show up white when we do this. We're only
+				  # drawing the point now... But the figure is as expected.
 ax.set_aspect(aspect='equal')
 ax.set_facecolor('black')
-fig.add_axes(ax)
 fig.patch.set_facecolor('black')
+fig.add_axes(ax)
 
 # Initialize the lines; actually, it will be more of a scatter plot
 scatter = [] # this line is probably unnecessary
@@ -260,7 +261,9 @@ def update(i):
 anim = animation.FuncAnimation(fig, update, frames=range(0,iters), 
 	init_func=init, blit=True, interval=1000*dt, repeat=True)
 
+# Save the animation as a gif. Note this only draws the points we plot, not the
+# background, so the gif background is white. Weird.
 plt.rcParams["animation.convert_path"] = "C:\Program Files\ImageMagick-7.0.7-Q16\magick.exe"
-anim.save('py_phonon.gif', writer="imagemagick",extra_args="convert",fps=30)
+anim.save('py_phonon_horiz.gif', writer="imagemagick",extra_args="convert",fps=30)
 plt.show()
 

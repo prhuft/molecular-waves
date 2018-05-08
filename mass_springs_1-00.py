@@ -7,7 +7,8 @@ Numerical simulation of masses connected by invisible, massless springs, solved
 iteratively with the Runge-Kutta (4th order) method. 
 
 Version notes: This first version plots plots a 2D grid of masses, animates the
-frames, and saves the animation as a gif with ImageMagick-7.
+frames, and saves the animation as a gif with ImageMagick-7, which must be 
+installed on the local machine prior to running this script.
 
 - Generalize get_initial_states for any type of system; i.e. pass in a function
 	to handle system-specific things, such as getting the initial mth derivs. 
@@ -210,12 +211,12 @@ m = .1 # [kg] these are massive particles lol
 kx = 1 # [N/m] Spring constant in x
 ky = 1 # [N/m] Spring constant in y
 r0 = 1 # [m] the spring equilibrium length
-x_num =  10 # number of columns of masses
-y_num = 5 # number of rows of masses
+x_num =  8 # number of columns of masses
+y_num = 4 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 dt = 0.01 # [s]
-iters = 1000 #00 # times to update the systems
+iters = 500 #00 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
@@ -251,8 +252,10 @@ def update(i):
 	""" Set the ith data points with global values."""
 	# The points describing the network at the ith step
 	scatter.set_data(xdata[i],ydata[i])
-	ax.set_ylim(min(ydata[i])-r0,max(ydata[i])+r0)
-	ax.set_xlim(min(xdata[i])-r0,max(xdata[i])+r0)
+	
+	# If we update the axes limits, it shows up in the gif 
+	# ax.set_ylim(min(ydata[i])-r0,max(ydata[i])+r0)
+	# ax.set_xlim(min(xdata[i])-r0,max(xdata[i])+r0)
 	return scatter,
 
 # Run the animation
@@ -260,6 +263,6 @@ anim = animation.FuncAnimation(fig, update, frames=range(0,iters),
 	init_func=init, blit=True, interval=1000*dt, repeat=True)
 
 plt.rcParams["animation.convert_path"] = "C:\Program Files\ImageMagick-7.0.7-Q16\magick.exe"
-anim.save('py_phonon.gif', writer="imagemagick",extra_args="convert")
+anim.save('py_phonon.gif', writer="imagemagick",extra_args="convert",fps=30)
 plt.show()
 

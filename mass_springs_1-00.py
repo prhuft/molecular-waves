@@ -216,7 +216,7 @@ y_num = 4 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 dt = 0.01 # [s]
-iters = 500 #00 # times to update the systems
+iters = 700 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
@@ -232,13 +232,15 @@ xdata,ydata = get_data(state_0,dt,iters,params,rk4)
 ## SIMULATION SETUP
 
 # Initialize the figure
-fig = plt.figure()
+fig = plt.figure()#frameon=False)
 ax = fig.add_subplot(111)
+ax.set_axis_off()
 ax.set_aspect(aspect='equal')
 ax.set_facecolor('black')
+fig.add_axes(ax)
 fig.patch.set_facecolor('black')
 
-# # Initialize the lines; actually, it will be more of a scatter plot
+# Initialize the lines; actually, it will be more of a scatter plot
 scatter = [] # this line is probably unnecessary
 scatter, = ax.plot(xdata[0],ydata[0],color='green',marker='o',linestyle='None')
 
@@ -252,10 +254,6 @@ def update(i):
 	""" Set the ith data points with global values."""
 	# The points describing the network at the ith step
 	scatter.set_data(xdata[i],ydata[i])
-	
-	# If we update the axes limits, it shows up in the gif 
-	# ax.set_ylim(min(ydata[i])-r0,max(ydata[i])+r0)
-	# ax.set_xlim(min(xdata[i])-r0,max(xdata[i])+r0)
 	return scatter,
 
 # Run the animation

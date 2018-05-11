@@ -1,5 +1,5 @@
 """
-Mechanical Vibration Transfer Simulation, v1.01
+Material Cooling Simulation, v1.00 (based on mass_springs_1-00.py)
 	
 Preston Huft, Spring 2018. 
 
@@ -208,8 +208,8 @@ def get_initial_state(params,tau):
 	state_x,state_y = [],[]
 	for j in range(0,xlen): # iterate over the columns
 		for i in range(0,ylen): # iterate over the rows
-			rx_list[xlen*i + j] = j*r0 #+ r0*(rn()-.5)/2. # the x coord of mass ij
-			ry_list[xlen*i + j] = i*r0 #+ r0*(rn()-.5)/2. # the y coord of mass ij
+			rx_list[xlen*i + j] = j*r0 + r0*(rn()-.5)/10. # the x coord of mass ij
+			ry_list[xlen*i + j] = i*r0 + r0*(rn()-.5)/10. # the y coord of mass ij
 	state_x.append(rx_list)
 	state_x.append(vx_list)
 	state_x.append(ax_list)
@@ -251,15 +251,15 @@ m = .1 # [kg] these are massive particles lol
 kx = .01 # [N/m] Spring constant in x
 ky = .01 # [N/m] Spring constant in y
 r0 = .1 # [m] the spring equilibrium length
-x_num =  4 # number of columns of masses
-y_num = 4 # number of rows of masses
+x_num =  6 # number of columns of masses
+y_num = 6 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 # Noise (i.e. a frequency added atop the primary motion) parameters
-n_params = [2*pi*10,1,r0/5.] # frequency [rad/s], decay const. [s], scaling []
+n_params = [2*pi*10,(1/3.),r0/15.] # frequency [rad/s], decay const. [s], scaling []
 
 dt = 0.01 # [s]
-iters = 700 # times to update the systems
+iters = 1500 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
@@ -307,6 +307,6 @@ anim = animation.FuncAnimation(fig, update, frames=range(0,iters),
 # # Save the animation as a gif. Note this only draws the points we plot, not the
 # # background, so the gif background is white. Weird.
 plt.rcParams["animation.convert_path"] = "C:\Program Files\ImageMagick-7.0.7-Q16\magick.exe"
-anim.save('py_fast_cooling1.gif', writer="imagemagick",extra_args="convert",fps=30)
-# plt.show()
+anim.save('py_fast_cooling_6x6_2.gif', writer="imagemagick",extra_args="convert",fps=30)
+plt.show()
 

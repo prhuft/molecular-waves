@@ -1,5 +1,5 @@
 """
-Material Cooling Simulation, v1.00 (based on mass_springs_1-00.py)
+Uniform Material Cooling Simulation, v1.00 (based on mass_springs_1-00.py)
 	
 Preston Huft, Spring 2018. 
 

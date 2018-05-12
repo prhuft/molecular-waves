@@ -139,7 +139,7 @@ def get_data(state,tau,steps,params,noise_func,num_update,other):
 		other = a list of any other parameters, e.g. arguments needs by noise
 	"""
 	# Fix all outermost masses?
-	fix_outer = True
+	# fix_outer = True
 	
 	# Extract system parameters
 	kx,ky,m,r0,xlen,ylen = params
@@ -150,14 +150,19 @@ def get_data(state,tau,steps,params,noise_func,num_update,other):
 	# Other parameters
 	if other is not None:
 		n_params = other
+		res_params = list(n_params)
+		res_params[0] *= 10
 	
 	xdata = [] # the x positions
 	ydata = [] # ditto, but in y
 	
 	# Define a noise function
 	if noise_func is not None:
-		def noise(t):
-			return noise_func(t,n_params)
+		def noise(t,phi):
+			return noise_func(t,phi,n_params)
+		def res_noise(t,phi):
+			res_params[1] = -t # so that -t/a = 1 always
+			return noise_func(t,phi,res_params)
 		xphases = hfl.rand_list(len(state[0][0]),0,1)
 		yphases = hfl.rand_list(len(state[1][0]),0,1)
 	else: 
@@ -171,17 +176,21 @@ def get_data(state,tau,steps,params,noise_func,num_update,other):
 		try:
 			# Create a "thermal" gradient by making the columns at opposite ends 
 			# effective hot and cold reservoirs
-			xlen_m1 = xlen-1
-			state[0][0] = [(0+noise(i*tau+phi_x))*(i%xlen==0)+x*(i%xlen!=0) 
-						   for (x,phi_x) in zip(state[0][0],xphases)]
-			state[1][0] = [r0*(xlen_m1) *(i%xlen_m1==0)+y*(i%xlen_m1!=0) 
-						   for (y,phi_y) in zip(state[1][0],yphases)]
+			# xlen_m1 = xlen-1
+			# state[0][0] = [(x+res_noise(i*tau,phi_x))*(i%xlen==0)+
+				# (x+noise(i*tau,phi_x))*(i%xlen!=0) for (x,phi_x) in 
+				# zip(state[0][0],xphases)]
+			# state[1][0] = [(y+res_noise(i*tau,phi_y))*(i%xlen==0)+
+				# (y+noise(i*tau,phi_y))*(i%xlen!=0) for (y,phi_y) in 
+				# zip(state[1][0],yphases)]
 			
-			# Add noise to position variables
-			# state[0][0] = [x + noise(i*tau+phi_x) 
-						   # for (x,phi_x) in zip(state[0][0],xphases)]
-			# state[1][0] = [y + noise(i*tau+phi_y) 
-						   # for (y,phi_y) in zip(state[1][0],yphases)]
+			# print(len(state[0][0]))
+			
+			# Add noise to particles' positions
+			state[0][0] = [x + noise(i*tau,phi_x) 
+						   for (x,phi_x) in zip(state[0][0],xphases)]
+			state[1][0] = [y + noise(i*tau,phi_y) 
+						   for (y,phi_y) in zip(state[1][0],yphases)]
 		
 			# Update the state of the network
 			state = num_update(state,dt,params,derivs)
@@ -220,8 +229,8 @@ def get_initial_state(params,tau):
 	state_x,state_y = [],[]
 	for j in range(0,xlen): # iterate over the columns
 		for i in range(0,ylen): # iterate over the rows
-			rx_list[xlen*i + j] = j*r0 + r0*(rn()-.5)/10. # the x coord of mass ij
-			ry_list[xlen*i + j] = i*r0 + r0*(rn()-.5)/10. # the y coord of mass ij
+			rx_list[xlen*i + j] = j*r0 #+ r0*(rn()-.5)/10. # the x coord of mass ij
+			ry_list[xlen*i + j] = i*r0 #+ r0*(rn()-.5)/10. # the y coord of mass ij
 	state_x.append(rx_list)
 	state_x.append(vx_list)
 	state_x.append(ax_list)
@@ -240,7 +249,7 @@ def get_initial_state(params,tau):
 
 ## METHODS - MISCELLANEOUS
 
-def sin_noise(t,consts):
+def sin_noise(t,phi,consts):
 	""" A time-dependent system noise that can be added on to generalized 
 		coordinates each iteration. 
 
@@ -254,7 +263,7 @@ def sin_noise(t,consts):
 	"""
 	o,a,c = consts
 	
-	return c*sin(o*t)*exp(-t/a)
+	return c*sin(o*t+phi)*exp(-t/a)
 
 ## SYSTEM INITIALIZATION
 
@@ -268,18 +277,14 @@ y_num = 6 # number of rows of masses
 params = [kx,ky,m,r0,x_num,y_num]
 
 # Noise (i.e. a frequency added atop the primary motion) parameters
-n_params = [2*pi*10,(1/3.),r0/15.] # frequency [rad/s], decay const. [s], scaling []
+# frequency [rad/s], decay const. [s], scaling []
+n_params = [2*pi*10,(1/3.),r0/15.] 
 
 dt = 0.01 # [s]
-iters = 1500 # times to update the systems
+iters = 100#1500 # times to update the systems
 
 # Generate the initial state
 state_0 = get_initial_state(params,dt)
-
-# # Pull the leftmost particles r0 to the left out of equilibrium
-# xlist = state_0[0][0]
-# state_0[0][0] = [-r0*(i%x_num==0)+xlist[i]*(i%x_num!=0) 
-				 # for i in range(0,len(xlist))]
 				 
 # Generate the data
 xdata,ydata = get_data(state_0,dt,iters,params,sin_noise,rk4,n_params)
@@ -299,6 +304,7 @@ fig.add_axes(ax)
 # Initialize the lines; actually, it will be more of a scatter plot
 scatter = [] # this line is probably unnecessary
 scatter, = ax.plot(xdata[0],ydata[0],color='blue',marker='o',linestyle='None')
+#scatter, = ax.plot([],[],color='blue',marker='o',linestyle='None')
 
 def init():
 	""" Set the axes limits with global values. """
